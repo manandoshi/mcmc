@@ -35,7 +35,7 @@ void differential(int n, double *Id, double *B, double *result, float d)
     else
     {
         iter = n;
-        cout<<"Not integer re"<<endl;
+        //cout<<"Not integer re"<<endl;
     }
     double *B_pow = new double[n*n];
     memcpy(B_pow, B, n*n*sizeof(double));
@@ -52,8 +52,10 @@ void differential(int n, double *Id, double *B, double *result, float d)
     return;
 }
 
-double calc_MLE(int n, float var, float d, float phi_1, string fname)
+double calc_MLE(int n, float var, float d, float phi_1)
 {
+
+    string fname="series_0.5_0.5_0.5_100.csv";
     //Getting the data
     ifstream ifile(fname);
     string value;
@@ -96,7 +98,7 @@ double calc_MLE(int n, float var, float d, float phi_1, string fname)
     for(int i = 0; i < n; i++)
     {
         double factor = z[i]*z[i]/var;
-        cout<<z[i]<<endl;
+        //cout<<z[i]<<endl;
         nll += factor;
     }
     delete temp;

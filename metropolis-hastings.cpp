@@ -1,29 +1,49 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <chrono>
 #include <random>
-#include <stdlib>
-#include <time>
-
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include <string.h>
+#include <omp.h>
+#include "mle.h"
 
 #define H 3
-#define D_STD 1
-#define MU_STD 1
-#define RHO_STD 1
-#define SIGMA_STD 1
+#define D_STD 0.1
+#define PHI_STD 0.3
+#define VAR_STD 0.3
 
 
 using namespace std;
 
 struct params{
     int id;
-    double d;
-    double mu;
-    double rho;
-    double sigma;
+    float d;
+    float phi;
+    float var;
     bool is_generated;
-    double potential;
+    float negln_potential;
+    bool is_valid;
 };
+
+struct mcmc_state{
+
+    float d;
+    float phi;
+    float var;
+};
+
+mcmc_state copyToState(params p){
+
+    mcmc_state new_state;
+    new_state.d = p.d;
+    new_state.phi = p.phi;
+    new_state.var = p.var;
+
+    return new_state;
+}
 
 params generateStateProposal(params prev_params, int new_state_id){
 
@@ -34,30 +54,46 @@ params generateStateProposal(params prev_params, int new_state_id){
     default_random_engine generator;
     generator.seed(seedval);
     
-    normal_distribution<double> d_distr(prev_params.d, D_STD);
-    normal_distribution<double> mu_distr(prev_params.mu, MU_STD);
-    normal_distribution<double> rho_distr(prev_params.rho, RHO_STD);
-    normal_distribution<double> sigma_distr(prev_params.sigma, SIGMA_STD);
+    normal_distribution<float> d_distr(prev_params.d, D_STD);
+    normal_distribution<float> phi_distr(prev_params.phi, PHI_STD);
+    normal_distribution<float> var_distr(prev_params.var, VAR_STD);
 
-    state_proposal.id = new_state_id;
+    //Get state parameters from normal distribution
     state_proposal.d = d_distr(generator);
-    state_proposal.mu = mu_distr(generator);
-    state_proposal.rho = rho_distr(generator);
-    state_proposal.sigma = sigma_distr(generator);
+    state_proposal.phi = phi_distr(generator);
+    state_proposal.var = var_distr(generator);
+
+    //Set other values for state proposal
+    state_proposal.id = new_state_id;
     state_proposal.is_generated = true;
 
-    cout << "Proposal for state " << state_proposal.id << " starting from state " << prev_params.id << endl;
-    cout << state_proposal.d << " " << prev_params.d << endl;
-    //cout << state_proposal.mu << " " << prev_params.mu << endl;
-    //cout << state_proposal.rho << " " << prev_params.rho << endl;
-    //cout << state_proposal.sigma << " " << prev_params.sigma << endl;
-    cout << endl;
+    //cout << "Proposal for state " << state_proposal.id << " starting from state " << prev_params.id << endl;
+    //cout << state_proposal.d << " " << prev_params.d << endl;
+    //cout << endl;
 
     return state_proposal;
 }
 
+void printState(mcmc_state state)
+{
 
-int main()
+    fstream fs_d, fs_phi, fs_var;
+    fs_d.open("d.txt", ios::app);
+    fs_phi.open("phi.txt", ios::app);
+    fs_var.open("var.txt", ios::app);
+
+    cout << "d: " << state.d << "\tphi: " << state.phi << "\tvar: " << state.var << endl;
+
+    fs_d << state.d << endl;
+    fs_phi << state.phi << endl;
+    fs_var << state.var << endl;
+
+    fs_d.close();
+    fs_phi.close();
+    fs_var.close();
+}
+
+params* generateStateTree(mcmc_state start_state)
 {
 
     srand(time(NULL));
@@ -70,10 +106,10 @@ int main()
     }
 
     //Define starting state
-    proposals[0].d = 0.5;
-    proposals[0].mu = 0;
-    proposals[0].rho = 0;
-    proposals[0].sigma = 1;
+    proposals[0].d = start_state.d;
+    proposals[0].phi = start_state.phi;
+    proposals[0].var = start_state.var;
+    proposals[0].id = 0;
     proposals[0].is_generated = true;
 
     //Generate state proposals for the pre-fetching tree
@@ -89,27 +125,50 @@ int main()
                 break;
             else
             {
-                proposals[j+k] = generateStateProposal(generated_states[j], j+k);
+                proposals[j+k] = generateStateProposal(proposals[j], j+k);
             }
         }
     }
 
+    omp_set_num_threads(total_states);
+
     //Calculate state potentials for finding acceptance probabilities
+    #pragma omp parallel for
     for(int j = 0; j < total_states; j++)
     {
-        
+        //cout << "up top\n";
+        if(proposals[j].d <= -0.5 || proposals[j].d >= 0.5)
+        {
+            proposals[j].negln_potential = 0;
+            proposals[j].is_valid = false;
+        }
+        else
+        {
+            proposals[j].negln_potential = calc_MLE(100, proposals[j].var, proposals[j].d, proposals[j].phi);
+            proposals[j].is_valid = true;
+        }
+            
     }
 
-    params* selected_states = new params [H];
+    params* selected_states = new params [H+1];
 
     //Select states according to acceptance probability
     int same_selections = 0;
-    double accept_prob;
+    float accept_prob;
     selected_states[0] = proposals[0];
 
-    for(int j = 1; j < H; j++){
+    for(int j = 1; j <= H; j++)
+    {
+        //Get next proposal index
         int next_prop = selected_states[j-1].id + pow(2, same_selections);
-        accept_prob = proposals[next_prop].potential/selected_states[j-1].potential;
+
+        //Get acceptance probability
+        if(proposals[j].is_valid == true)
+            accept_prob = exp(-proposals[next_prop].negln_potential + selected_states[j-1].negln_potential);
+        else
+            accept_prob = 0;
+
+        //Select the j^th state as either new proposal or same as previous state
         if(accept_prob >= 1)
             selected_states[j] = proposals[next_prop];
         else{
@@ -120,6 +179,32 @@ int main()
                 same_selections++;
             }
         }
+        //printState(selected_states[j]);
     }
 
+    return selected_states;
+
+}
+
+int main()
+{
+
+    mcmc_state state[1000];
+
+    state[0].d = 0.1;
+    state[0].phi = 0.1;
+    state[0].var = 0.1;
+
+    params* next_state = new params [H+1];
+    for(int new_start_state = 0; new_start_state <= 1000; new_start_state += H)
+    {
+        if(new_start_state % 60 == 0)
+            cout << "Finished state " << new_start_state << endl;
+        next_state = generateStateTree(state[new_start_state]);
+        for(int j = 1; j <= H; j++)
+            state[new_start_state+j] = copyToState(next_state[j]);
+    }
+
+    for(int j = 0; j < 1000; j++)
+        printState(state[j]);
 }
