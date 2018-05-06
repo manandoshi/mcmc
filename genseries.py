@@ -4,7 +4,7 @@ import sys
 
 #arguments are phi, d, sigma, length
 
-length = sys[4]
+length = int(sys.argv[4])
 
 def genbinomcoeff(n, r):
     
@@ -36,4 +36,4 @@ d = float(sys.argv[2])
 sigma = float(sys.argv[3])
 series = genSeries(phi, d, sigma)
 df = pd.DataFrame(series)
-df.to_csv("series_" + str(phi) + "_" + str(d) + "_" + str(sigma) + "_"".csv")
+df.to_csv("series_" + str(phi) + "_" + str(d) + "_" + str(sigma) + "_" + str(length) + ".csv", index=False)
