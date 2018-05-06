@@ -28,10 +28,10 @@ def genSeries(phi, d, sigma):
         a[i] = np.random.normal(0, sigma, 1) - ARI
     
     return a
- m
+
 phi = float(sys.argv[1])
 d = float(sys.argv[2])
 sigma = float(sys.argv[3])
 series = genSeries(phi, d, sigma)
 df = pd.DataFrame(series)
-df.to_csv("series_" + str(phi) + "_" + str(d) + "_" + str(sigma) + "_" + str(length) + ".csv", index=False)
+df.to_csv("series_" + str(phi) + "_" + str(d) + "_" + str(sigma) + "_" + str(length) + ".csv", index=False, header=None)
