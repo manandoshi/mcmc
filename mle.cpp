@@ -13,7 +13,7 @@ using namespace std;
 void AR(int n, double* Id, double* B, double* result, float phi_1)
 {
     int info;
-    memcpy(result, B, n*n);
+    memcpy(result, B, n*n*sizeof(double));
     info = LAPACKE_dlascl(LAPACK_ROW_MAJOR, 'L', 1, 1, -1, phi_1, n, n, result, n);
     if(info != 0)
     {
@@ -38,13 +38,13 @@ void differential(int n, double *Id, double *B, double *result, float d)
         cout<<"Not integer re"<<endl;
     }
     double *B_pow = new double[n*n];
-    memcpy(B_pow, B, n*n);
-    memcpy(result, Id, n*n);
+    memcpy(B_pow, B, n*n*sizeof(double));
+    memcpy(result, Id, n*n*sizeof(double));
     double coeff = 1.0;
     for(int j=0; j<iter; j++)
     {
         coeff = -1*coeff*(d - j)/(j + 1);
-        cblas_daxpy(n, coeff, B_pow, 1, result, 1);
+        cblas_daxpy(n*n, coeff, B_pow, 1, result, 1);
         if(j == iter - 1) break;
         cblas_dtrmm(CblasRowMajor, CblasRight, CblasLower, CblasNoTrans, CblasNonUnit, n, n, 1, B, n, B_pow, n);
     }
@@ -72,24 +72,35 @@ double calc_MLE(double *y, int n, float var, float d, float phi_1)
     double *z = new double[n];
     //Load differential to result
     differential(n, Id, B, result, d);
+    //for(int i = 0; i < n*n; i++) cout<<result[i]<<endl;
 
     //Load AR to temp
     AR(n, Id, B, temp, phi_1);
-
     //Compute AR*differential
     cblas_dtrmm(CblasRowMajor, CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, n, n, 1, temp, n, result, n);
 
+    for(int i = 0; i < n; i++) 
+    {
+        for(int j = 0; j < n; j++)
+            cout<<result[j + i*n]<<" ";
+        cout<<endl;
+    }
     //Multiply the resulting operator with y to get z
-    memcpy(z, y, n);
+    memcpy(z, y, n*sizeof(double));
     cblas_dtrmv(CblasRowMajor, CblasLower, CblasNoTrans, CblasNonUnit, n, result, n, z, 1);
 
-    double mle = 1;
+    double nll = 0;
     for(int i = 0; i < n; i++)
     {
-        mle = mle * 1/sqrt(2*M_PI*var)*exp(-1*z[i]*z[i]/var);
+        double factor = z[i]*z[i]/var;
+        cout<<z[i]<<endl;
+        nll += factor;
     }
-    
-    return mle;
+    delete temp;
+    delete result;
+    delete z;
+
+    return nll;
 }
 
 int main()
@@ -126,12 +137,22 @@ int main()
     //    cout<<x[i]<<endl;
     //}
 
-    ifstream ifile("data.csv");
+    ifstream ifile("series_0.5_1.0_1.0_5.csv");
     string value;
-    while(ifile.good())
+    int n = 5;
+    double y[n];
+    int size = 5;
+    double small_y[size];
+    int i = 0;
+    while(getline(ifile, value))
     {
-        getline(ifile, value, ',');
-        cout<<value<<endl;
-    }    
+        y[i] = stod(value);
+        i++;
+    }
+    for(int i = 0; i < size; i++)
+    {
+        small_y[i] = y[i];
+    }
+    cout<<calc_MLE(small_y, size, 1, 1, 0.5)<<endl;
     return 0;
 }
