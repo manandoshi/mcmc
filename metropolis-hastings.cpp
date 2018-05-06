@@ -2,6 +2,9 @@
 #include <cmath>
 #include <chrono>
 #include <random>
+#include <stdlib>
+#include <time>
+
 
 #define H 3
 #define D_STD 1
@@ -19,6 +22,7 @@ struct params{
     double rho;
     double sigma;
     bool is_generated;
+    double potential;
 };
 
 params generateStateProposal(params prev_params, int new_state_id){
@@ -56,21 +60,23 @@ params generateStateProposal(params prev_params, int new_state_id){
 int main()
 {
 
-    params X_0;
+    srand(time(NULL));
 
     int total_states = pow(2, H);
-    params *generated_states = new params [total_states];
+    params *proposals = new params [total_states];
     for(int j = 0; j < total_states; j++){
-        generated_states[j].is_generated = false;
-        generated_states[j].id = j;
+        proposals[j].is_generated = false;
+        proposals[j].id = j;
     }
 
-    generated_states[0].d = 1;
-    generated_states[0].mu = 2;
-    generated_states[0].rho = 4;
-    generated_states[0].sigma = 1;
-    generated_states[0].is_generated = true;
+    //Define starting state
+    proposals[0].d = 0.5;
+    proposals[0].mu = 0;
+    proposals[0].rho = 0;
+    proposals[0].sigma = 1;
+    proposals[0].is_generated = true;
 
+    //Generate state proposals for the pre-fetching tree
     for(int j = 0; j < total_states; j++)
     {
 
@@ -79,14 +85,41 @@ int main()
 
         for(int k = 1; j+k < total_states; k*=2)
         {
-            if(generated_states[j+k].is_generated == true)
+            if(proposals[j+k].is_generated == true)
                 break;
             else
             {
-                generated_states[j+k] = generateStateProposal(generated_states[j], j+k);
+                proposals[j+k] = generateStateProposal(generated_states[j], j+k);
             }
         }
+    }
 
+    //Calculate state potentials for finding acceptance probabilities
+    for(int j = 0; j < total_states; j++)
+    {
+        
+    }
+
+    params* selected_states = new params [H];
+
+    //Select states according to acceptance probability
+    int same_selections = 0;
+    double accept_prob;
+    selected_states[0] = proposals[0];
+
+    for(int j = 1; j < H; j++){
+        int next_prop = selected_states[j-1].id + pow(2, same_selections);
+        accept_prob = proposals[next_prop].potential/selected_states[j-1].potential;
+        if(accept_prob >= 1)
+            selected_states[j] = proposals[next_prop];
+        else{
+            if(rand() <= accept_prob)
+                selected_states[j] = proposals[next_prop];
+            else{
+                selected_states[j] = selected_states[j-1];
+                same_selections++;
+            }
+        }
     }
 
 }
