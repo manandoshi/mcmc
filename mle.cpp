@@ -4,6 +4,9 @@
 #include <lapacke.h>
 #include <cblas.h>
 #include <math.h>
+#include <fstream>
+#include <string.h>
+#include <vector>
 
 using namespace std;
 
@@ -94,33 +97,41 @@ int main()
     //float c,d,e;
     //d = 1.0;
     //calc_MLE(a,3,c,d,e);
-    double a[] = {1,0,4,1};
-    double b[] = {1,0,8,4};
-    double x[] = {1,2}; 
-    double *c = new double[4];
-    double *result = new double[4];
-    for(int i = 0; i < 4; i++) result[i] = 0;
-    int info_a, info_b, info; info_a = info_b = 2;
-    cblas_daxpy(4, 1, a, 1, result, 1);
-    cblas_daxpy(4, 1, b, 1, result, 1);
-    cblas_daxpy(4, 1, b, 1, c, 1);
-    cblas_dtrmm(CblasRowMajor, CblasLeft, CblasLower, CblasNoTrans, CblasUnit, 2, 2, 1, a, info_a, c, info_b);
-    for(int i = 0; i < 4; i++)
-        cout<<result[i]<<endl;
-    info = LAPACKE_dlascl(LAPACK_ROW_MAJOR, 'L', 1, 1, 1, 2.3, 2, 2, c, 2);
-    cout<<"Info:"<<info;
-    for(int i = 0; i < 2; i++)
+    //double a[] = {1,0,4,1};
+    //double b[] = {1,0,8,4};
+    //double x[] = {1,2}; 
+    //double *c = new double[4];
+    //double *result = new double[4];
+    //for(int i = 0; i < 4; i++) result[i] = 0;
+    //int info_a, info_b, info; info_a = info_b = 2;
+    //cblas_daxpy(4, 1, a, 1, result, 1);
+    //cblas_daxpy(4, 1, b, 1, result, 1);
+    //cblas_daxpy(4, 1, b, 1, c, 1);
+    //cblas_dtrmm(CblasRowMajor, CblasLeft, CblasLower, CblasNoTrans, CblasUnit, 2, 2, 1, a, info_a, c, info_b);
+    //for(int i = 0; i < 4; i++)
+    //    cout<<result[i]<<endl;
+    //info = LAPACKE_dlascl(LAPACK_ROW_MAJOR, 'L', 1, 1, 1, 2.3, 2, 2, c, 2);
+    //cout<<"Info:"<<info;
+    //for(int i = 0; i < 2; i++)
+    //{
+    //    for(int j = 0; j < 2; j++)
+    //    {
+    //        cout<<c[j + 2*i]<<" ";
+    //    }
+    //    cout<<endl;
+    //}
+    //cblas_dtrmv(CblasRowMajor, CblasLower, CblasNoTrans, CblasNonUnit, 2, a, 2, x, 1);
+    //for(int i = 0; i < 2; i++)
+    //{
+    //    cout<<x[i]<<endl;
+    //}
+
+    ifstream ifile("data.csv");
+    string value;
+    while(ifile.good())
     {
-        for(int j = 0; j < 2; j++)
-        {
-            cout<<c[j + 2*i]<<" ";
-        }
-        cout<<endl;
-    }
-    cblas_dtrmv(CblasRowMajor, CblasLower, CblasNoTrans, CblasNonUnit, 2, a, 2, x, 1);
-    for(int i = 0; i < 2; i++)
-    {
-        cout<<x[i]<<endl;
-    }
+        getline(ifile, value, ',');
+        cout<<value<<endl;
+    }    
     return 0;
 }
