@@ -79,12 +79,12 @@ double calc_MLE(double *y, int n, float var, float d, float phi_1)
     //Compute AR*differential
     cblas_dtrmm(CblasRowMajor, CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, n, n, 1, temp, n, result, n);
 
-    for(int i = 0; i < n; i++) 
-    {
-        for(int j = 0; j < n; j++)
-            cout<<result[j + i*n]<<" ";
-        cout<<endl;
-    }
+    //for(int i = 0; i < n; i++) 
+    //{
+    //    for(int j = 0; j < n; j++)
+    //        cout<<result[j + i*n]<<" ";
+    //    cout<<endl;
+    //}
     //Multiply the resulting operator with y to get z
     memcpy(z, y, n*sizeof(double));
     cblas_dtrmv(CblasRowMajor, CblasLower, CblasNoTrans, CblasNonUnit, n, result, n, z, 1);
@@ -137,9 +137,9 @@ int main()
     //    cout<<x[i]<<endl;
     //}
 
-    ifstream ifile("series_0.5_1.0_1.0_5.csv");
+    ifstream ifile("series_0.5_1.0_1.0_1000.csv");
     string value;
-    int n = 5;
+    int n = 1000;
     double y[n];
     int size = 5;
     double small_y[size];
@@ -153,6 +153,6 @@ int main()
     {
         small_y[i] = y[i];
     }
-    cout<<calc_MLE(small_y, size, 1, 1, 0.5)<<endl;
+    cout<<calc_MLE(y, n, 1, 1, 0.5)<<endl;
     return 0;
 }
