@@ -13,7 +13,7 @@ int getTimeSeries(int p, float d, int q, float variance, float *phi, float *nu){
 	//normal dist takes mean and std as an input
     normal_distribution<double> distribution(0,pow(variance, 0.5));
 
-	float series[1000], errors[1000], diff_coeff[1000];
+	double series[1000], errors[1000], diff_coeff[1000];
 	int iter=0;
 
 	// assign values to the first p terms. Typically, p is a single digit value
@@ -24,14 +24,16 @@ int getTimeSeries(int p, float d, int q, float variance, float *phi, float *nu){
 	}
 
 	// populate the errors and diff coefficients
-
-	for(int j=0; j<1000; j++){
+    double coeff = 1.0;
+    diff_coeff[0] = coeff;
+	for(int j=1; j<1000; j++){
+        coeff = coeff*(d - j + 1)/j;
 		errors[j] = distribution(generator);
-		diff_coeff[j] = (tgamma(d+1)/(tgamma(j+2)*tgamma(d-j)))*(pow(-1, j+1));
-		cout<<tgamma(d+j)<<endl;
+        diff_coeff[j] = coeff;
+		//diff_coeff[j] = (tgamma(d+1)/(tgamma(j+1)*tgamma(d-j+1)))*(pow(-1, j));
+		//cout<<coeff<<endl;
 		//0th value corresponds to k=1 in the formula  
 	}
-
 
 	for(int i=p; i<1000; i++){
 
@@ -40,7 +42,7 @@ int getTimeSeries(int p, float d, int q, float variance, float *phi, float *nu){
 		float MA = errors[i];
 		iter = fmin(i,q);
 		for(int j=1; j<=iter; j++){
-			MA += nu[j-1]*errors[i-j];
+			MA -= nu[j-1]*errors[i-j];
 		}
 
 		// Calculate AR and Differential Terms for ith value 
@@ -65,15 +67,15 @@ int getTimeSeries(int p, float d, int q, float variance, float *phi, float *nu){
 		//assign the ith value 
 		series[i] = firstterm + secondterm + thirdterm + MA;
 	}
-	//for(int i=0; i<1000; i++)
-	//	cout << series[i];
+	for(int i=0; i<1000; i++)
+		cout << series[i];
 	return 0;
 
 }
 
 int main(){
 	float phi[3]={3,4,5}, nu[3]={1,2,3};
-	getTimeSeries(3,3,3,4,phi, nu);
-	cout<<phi[2]<<endl;
+	getTimeSeries(3,0.3,3,4,phi, nu);
+	//cout<<phi[2]<<endl;
 	return 0;
 }
