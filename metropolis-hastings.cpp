@@ -10,7 +10,7 @@
 #include <omp.h>
 #include "mle.h"
 
-#define H 2
+#define H 3
 #define D_STD 0.02
 #define PHI_STD 0.05
 #define VAR_STD 0.8
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
     string fname = argv[1];
     int size = stoi(argv[2]);
     int n = stoi(argv[3]);
-    int num_threads = stoi(argv[4])
+    int num_threads = stoi(argv[4]);
     omp_set_num_threads(num_threads);
     mcmc_state state[n];
 
@@ -202,6 +202,8 @@ int main(int argc, char **argv)
         i++;
     }
 
+
+    clock_t begin = clock();
 
     state[0].d = 0.1;
     state[0].phi = 0.1;
@@ -219,6 +221,9 @@ int main(int argc, char **argv)
         }
         delete next_state;
     }
+    clock_t end = clock();
+    double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
+    cout<<time_spent<<endl;
 
     //for(int j = 0; j < n; j++)
     //{
