@@ -11,9 +11,9 @@
 #include "mle.h"
 
 #define H 3
-#define D_STD 0.03
+#define D_STD 0.01
 #define PHI_STD 0.05
-#define VAR_STD 3
+#define VAR_STD 0.8
 
 
 using namespace std;
@@ -177,6 +177,7 @@ params* generateStateTree(mcmc_state start_state, string fname, int n)
             }
         }
     }
+    delete proposals;
 
     return selected_states;
 
@@ -193,7 +194,7 @@ int main(int argc, char **argv)
     state[0].phi = 0.1;
     state[0].var = 0.1;
 
-    params* next_state = new params [H+1];
+    params* next_state;
     for(int new_start_state = 0; new_start_state <= n; new_start_state += H)
     {
         if(new_start_state % 60 == 0)

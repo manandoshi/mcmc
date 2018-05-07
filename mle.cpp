@@ -94,10 +94,12 @@ double calc_MLE(string fname, int n, float var, float d, float phi_1)
     double nll = 0;
     for(int i = 0; i < n; i++)
     {
-        double factor = 0.5*log(2.0*M_PI*var) + z[i]*z[i]/var;
+        double factor = 0.5*log(2.0*M_PI*var) + z[i]*z[i]/(2*var);
         //cout<<z[i]<<endl;
         nll += factor;
     }
+    delete Id;
+    delete B;
     delete temp;
     delete result;
     delete z;
