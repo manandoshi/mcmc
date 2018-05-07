@@ -51,18 +51,8 @@ void differential(int n, double *Id, double *B, double *result, float d)
     return;
 }
 
-double calc_MLE(string fname, int n, float var, float d, float phi_1)
+double calc_MLE(double* y, int n, float var, float d, float phi_1)
 {
-    //Getting the data
-    ifstream ifile(fname);
-    string value;
-    double y[n];
-    int i = 0;
-    while(getline(ifile, value))
-    {
-        y[i] = stod(value);
-        i++;
-    }
 
     double* Id = new double[n*n];
     double* B = new double[n*n];

@@ -93,7 +93,7 @@ void printState(mcmc_state state)
     fs_var.close();
 }
 
-params* generateStateTree(mcmc_state start_state, string fname, int n)
+params* generateStateTree(mcmc_state start_state, double* y, int n)
 {
 
     srand(time(NULL));
@@ -143,7 +143,7 @@ params* generateStateTree(mcmc_state start_state, string fname, int n)
         }
         else
         {
-            proposals[j].negln_potential = calc_MLE(fname, n, proposals[j].var, proposals[j].d, proposals[j].phi);
+            proposals[j].negln_potential = calc_MLE(y, n, proposals[j].var, proposals[j].d, proposals[j].phi);
             proposals[j].is_valid = true;
         }
             
@@ -190,6 +190,18 @@ int main(int argc, char **argv)
     int n = stoi(argv[3]);
     mcmc_state state[n];
 
+    //Getting the data
+    ifstream ifile(fname);
+    string value;
+    double y[n];
+    int i = 0;
+    while(getline(ifile, value))
+    {
+        y[i] = stod(value);
+        i++;
+    }
+
+
     state[0].d = 0.1;
     state[0].phi = 0.1;
     state[0].var = 0.1;
@@ -199,7 +211,7 @@ int main(int argc, char **argv)
     {
         if(new_start_state % 60 == 0)
             cout << "Finished state " << new_start_state << endl;
-        next_state = generateStateTree(state[new_start_state], fname, size);
+        next_state = generateStateTree(state[new_start_state], y, size);
         for(int j = 1; j <= H; j++){
             state[new_start_state+j] = copyToState(next_state[j]);
             cout<<new_start_state + j<<" "<<next_state[j].negln_potential<<endl;
