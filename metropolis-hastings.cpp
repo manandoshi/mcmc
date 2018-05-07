@@ -10,7 +10,7 @@
 #include <omp.h>
 #include "mle.h"
 
-#define H 3
+#define H 2
 #define D_STD 0.02
 #define PHI_STD 0.05
 #define VAR_STD 0.8
@@ -129,7 +129,6 @@ params* generateStateTree(mcmc_state start_state, double* y, int n)
             }
         }
     }
-    omp_set_num_threads(total_states);
 
     //Calculate state potentials for finding acceptance probabilities
     #pragma omp parallel for
@@ -188,6 +187,8 @@ int main(int argc, char **argv)
     string fname = argv[1];
     int size = stoi(argv[2]);
     int n = stoi(argv[3]);
+    int num_threads = stoi(argv[4])
+    omp_set_num_threads(num_threads);
     mcmc_state state[n];
 
     //Getting the data
@@ -209,18 +210,18 @@ int main(int argc, char **argv)
     params* next_state;
     for(int new_start_state = 0; new_start_state <= n; new_start_state += H)
     {
-        if(new_start_state % 60 == 0)
-            cout << "Finished state " << new_start_state << endl;
+        //if(new_start_state % 60 == 0)
+        //    cout << "Finished state " << new_start_state << endl;
         next_state = generateStateTree(state[new_start_state], y, size);
         for(int j = 1; j <= H; j++){
             state[new_start_state+j] = copyToState(next_state[j]);
-            cout<<new_start_state + j<<" "<<next_state[j].negln_potential<<endl;
+            //cout<<new_start_state + j<<" "<<next_state[j].negln_potential<<endl;
         }
         delete next_state;
     }
 
-    for(int j = 0; j < n; j++)
-    {
-        printState(state[j]);
-    }
+    //for(int j = 0; j < n; j++)
+    //{
+    //    printState(state[j]);
+    //}
 }
