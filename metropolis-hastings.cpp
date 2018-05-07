@@ -11,9 +11,9 @@
 #include "mle.h"
 
 #define H 3
-#define D_STD 0.1
-#define PHI_STD 0.3
-#define VAR_STD 0.3
+#define D_STD 0.03
+#define PHI_STD 0.05
+#define VAR_STD 3
 
 
 using namespace std;
@@ -93,7 +93,7 @@ void printState(mcmc_state state)
     fs_var.close();
 }
 
-params* generateStateTree(mcmc_state start_state)
+params* generateStateTree(mcmc_state start_state, string fname, int n)
 {
 
     srand(time(NULL));
@@ -129,7 +129,6 @@ params* generateStateTree(mcmc_state start_state)
             }
         }
     }
-
     omp_set_num_threads(total_states);
 
     //Calculate state potentials for finding acceptance probabilities
@@ -137,74 +136,78 @@ params* generateStateTree(mcmc_state start_state)
     for(int j = 0; j < total_states; j++)
     {
         //cout << "up top\n";
-        if(proposals[j].d <= -0.5 || proposals[j].d >= 0.5)
+        if(proposals[j].d <= -0.5 || proposals[j].d >= 0.5 || proposals[j].var <= 0)
         {
             proposals[j].negln_potential = 0;
             proposals[j].is_valid = false;
         }
         else
         {
-            proposals[j].negln_potential = calc_MLE(100, proposals[j].var, proposals[j].d, proposals[j].phi);
+            proposals[j].negln_potential = calc_MLE(fname, n, proposals[j].var, proposals[j].d, proposals[j].phi);
             proposals[j].is_valid = true;
         }
             
     }
-
     params* selected_states = new params [H+1];
 
     //Select states according to acceptance probability
-    int same_selections = 0;
+    int same_selections = H-1;
     float accept_prob;
     selected_states[0] = proposals[0];
 
-    for(int j = 1; j <= H; j++)
+    for(int j = 0; j < H; j++)
     {
         //Get next proposal index
-        int next_prop = selected_states[j-1].id + pow(2, same_selections);
-
+        int next_prop = selected_states[j].id + pow(2, H-1-j);
         //Get acceptance probability
-        if(proposals[j].is_valid == true)
-            accept_prob = exp(-proposals[next_prop].negln_potential + selected_states[j-1].negln_potential);
-        else
+        if(proposals[next_prop].is_valid == true){
+            accept_prob = exp(-proposals[next_prop].negln_potential + selected_states[j].negln_potential);
+        }else{
             accept_prob = 0;
-
+        }
         //Select the j^th state as either new proposal or same as previous state
         if(accept_prob >= 1)
-            selected_states[j] = proposals[next_prop];
+            selected_states[j+1] = proposals[next_prop];
         else{
-            if(rand() <= accept_prob)
-                selected_states[j] = proposals[next_prop];
+            if((float) rand() / RAND_MAX <= accept_prob)
+                selected_states[j+1] = proposals[next_prop];
             else{
-                selected_states[j] = selected_states[j-1];
+                selected_states[j+1] = selected_states[j];
                 same_selections++;
             }
         }
-        //printState(selected_states[j]);
     }
 
     return selected_states;
 
 }
 
-int main()
+int main(int argc, char **argv)
 {
-
-    mcmc_state state[1000];
+    string fname = argv[1];
+    int size = stoi(argv[2]);
+    int n = stoi(argv[3]);
+    mcmc_state state[n];
 
     state[0].d = 0.1;
     state[0].phi = 0.1;
     state[0].var = 0.1;
 
     params* next_state = new params [H+1];
-    for(int new_start_state = 0; new_start_state <= 1000; new_start_state += H)
+    for(int new_start_state = 0; new_start_state <= n; new_start_state += H)
     {
         if(new_start_state % 60 == 0)
             cout << "Finished state " << new_start_state << endl;
-        next_state = generateStateTree(state[new_start_state]);
-        for(int j = 1; j <= H; j++)
+        next_state = generateStateTree(state[new_start_state], fname, size);
+        for(int j = 1; j <= H; j++){
             state[new_start_state+j] = copyToState(next_state[j]);
+            cout<<new_start_state + j<<" "<<next_state[j].negln_potential<<endl;
+        }
+        delete next_state;
     }
 
-    for(int j = 0; j < 1000; j++)
+    for(int j = 0; j < n; j++)
+    {
         printState(state[j]);
+    }
 }

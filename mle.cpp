@@ -30,7 +30,6 @@ void differential(int n, double *Id, double *B, double *result, float d)
     if(ceilf(d) == d)
     {
         iter = fmin(d,n);
-        cout<<"Integer hai re"<<endl;
     }
     else
     {
@@ -52,10 +51,8 @@ void differential(int n, double *Id, double *B, double *result, float d)
     return;
 }
 
-double calc_MLE(int n, float var, float d, float phi_1)
+double calc_MLE(string fname, int n, float var, float d, float phi_1)
 {
-
-    string fname="series_0.5_0.5_0.5_100.csv";
     //Getting the data
     ifstream ifile(fname);
     string value;
@@ -97,7 +94,7 @@ double calc_MLE(int n, float var, float d, float phi_1)
     double nll = 0;
     for(int i = 0; i < n; i++)
     {
-        double factor = z[i]*z[i]/var;
+        double factor = 0.5*log(2.0*M_PI*var) + z[i]*z[i]/var;
         //cout<<z[i]<<endl;
         nll += factor;
     }
