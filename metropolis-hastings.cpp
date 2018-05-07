@@ -11,7 +11,7 @@
 #include "mle.h"
 
 #define H 3
-#define D_STD 0.01
+#define D_STD 0.02
 #define PHI_STD 0.05
 #define VAR_STD 0.8
 
